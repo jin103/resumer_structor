@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面</title>
+</head>
+<body>
+    <h1>测试页面</h1>
+    <p>如果这个页面不刷新，说明服务器正常。</p>
+    <p>当前时间: <span id="time"></span></p>
+
+    <script>
+        // 更新时间显示
+        function updateTime() {
+            document.getElementById('time').textContent = new Date().toLocaleString();
+        }
+
+        // 每秒更新一次时间
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        console.log('测试页面已加载');
+    </script>
+</body>
+</html>

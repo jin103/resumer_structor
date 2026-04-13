@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小YO - 聊天助手</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <i class="fas fa-robot"></i>
+                <h1>小YO - 聊天助手</h1>
+                <span class="status" id="status">连接中...</span>
+            </div>
+        </header>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            你好！我是小YO，有什么可以帮助你的吗？🤖
+                        </div>
+                        <div class="message-time">刚刚</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="input-wrapper" id="inputWrapper">
+                    <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="输入您的问题，或拖拽简历文件到此处..."
+                        maxlength="1000"
+                    >
+                    <input type="file" id="fileInput" accept=".pdf,.docx" style="display: none;">
+                    <button id="sendButton" class="send-button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="input-actions">
+                    <button id="clearButton" class="action-button">
+                        <i class="fas fa-trash"></i> 清空对话
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 错误提示 -->
+    <div class="error-toast" id="errorToast">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="errorMessage"></span>
+    </div>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

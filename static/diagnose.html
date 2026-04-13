@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连接诊断</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 小YO 连接诊断</h1>
+
+    <div class="test-section">
+        <h3>服务器连接测试</h3>
+        <button onclick="testServerConnection()">测试服务器连接</button>
+        <div id="serverStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>API功能测试</h3>
+        <button onclick="testAPIConnection()">测试API连接</button>
+        <div id="apiStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>流式API测试</h3>
+        <button onclick="testStreamAPI()">测试流式API</button>
+        <div id="streamStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>前端资源测试</h3>
+        <button onclick="testStaticResources()">测试静态资源</button>
+        <div id="staticStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>浏览器信息</h3>
+        <div id="browserInfo"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>网络诊断</h3>
+        <button onclick="runFullDiagnosis()">运行完整诊断</button>
+        <div id="fullDiagnosis"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8003';
+
+        function createStatusElement(text, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = text;
+            return div;
+        }
+
+        function clearStatus(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        function addStatus(elementId, text, type = 'info') {
+            const container = document.getElementById(elementId);
+            const statusEl = createStatusElement(text, type);
+            container.appendChild(statusEl);
+        }
+
+        async function testServerConnection() {
+            clearStatus('serverStatus');
+            addStatus('serverStatus', '正在测试服务器连接...', 'warning');
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE}/`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                if (response.ok) {
+                    addStatus('serverStatus', `✅ 服务器连接成功 (${duration}ms)`, 'success');
+                    addStatus('serverStatus', `状态码: ${response.status}`, 'success');
+                    addStatus('serverStatus', `响应头: ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}`, 'info');
+                } else {
+                    addStatus('serverStatus', `❌ 服务器响应异常: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addStatus('serverStatus', `❌ 连接失败: ${error.message}`, 'error');
+                console.error('Server connection error:', error);
+            }
+        }
+
+        async function testAPIConnection() {
+            clearStatus('apiStatus');
+            addStatus('apiStatus', '正在测试API连接...', 'warning');
+
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: '你好' })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addStatus('apiStatus', '✅ API连接成功', 'success');
+                    addStatus('apiStatus', `响应: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    addStatus('apiStatus', `❌ API响应异常: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addStatus('apiStatus', `❌ API连接失败: ${error.message}`, 'error');
+                console.error('API connection error:', error);
+            }
+        }
+
+        async function testStreamAPI() {
+            clearStatus('streamStatus');
+            addStatus('streamStatus', '正在测试流式API...', 'warning');
+
+            try {
+                const response = await fetch(`${API_BASE}/stream_chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: '测试流式输出' })
+                });
+
+                if (response.ok) {
+                    addStatus('streamStatus', '✅ 流式API连接成功', 'success');
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let chunkCount = 0;
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        const text = decoder.decode(value, { stream: true });
+                        const lines = text.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                chunkCount++;
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    addStatus('streamStatus', `数据块 ${chunkCount}: ${JSON.stringify(data)}`, 'info');
+                                } catch (e) {
+                                    addStatus('streamStatus', `解析错误: ${line}`, 'warning');
+                                }
+                            }
+                        }
+
+                        if (chunkCount >= 3) break; // 只显示前3个数据块
+                    }
+
+                    addStatus('streamStatus', `总共接收了 ${chunkCount} 个数据块`, 'success');
+                } else {
+                    addStatus('streamStatus', `❌ 流式API响应异常: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addStatus('streamStatus', `❌ 流式API连接失败: ${error.message}`, 'error');
+                console.error('Stream API error:', error);
+            }
+        }
+
+        async function testStaticResources() {
+            clearStatus('staticStatus');
+            addStatus('staticStatus', '正在测试静态资源...', 'warning');
+
+            const resources = [
+                '/static/css/styles.css',
+                '/static/js/chat.js',
+                '/static/js/simple_chat.js'
+            ];
+
+            for (const resource of resources) {
+                try {
+                    const response = await fetch(`${API_BASE}${resource}`);
+                    if (response.ok) {
+                        addStatus('staticStatus', `✅ ${resource} - 加载成功`, 'success');
+                    } else {
+                        addStatus('staticStatus', `❌ ${resource} - 加载失败: ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    addStatus('staticStatus', `❌ ${resource} - 连接失败: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function showBrowserInfo() {
+            const info = document.getElementById('browserInfo');
+            info.innerHTML = `
+                <div class="status info">用户代理: ${navigator.userAgent}</div>
+                <div class="status info">语言: ${navigator.language}</div>
+                <div class="status info">在线状态: ${navigator.onLine ? '在线' : '离线'}</div>
+                <div class="status info">Cookie启用: ${navigator.cookieEnabled ? '是' : '否'}</div>
+                <div class="status info">屏幕分辨率: ${screen.width}x${screen.height}</div>
+            `;
+        }
+
+        async function runFullDiagnosis() {
+            clearStatus('fullDiagnosis');
+            addStatus('fullDiagnosis', '开始完整诊断...', 'warning');
+
+            // 按顺序运行所有测试
+            await testServerConnection();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testAPIConnection();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testStreamAPI();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testStaticResources();
+
+            addStatus('fullDiagnosis', '✅ 诊断完成！请检查上面的结果。', 'success');
+        }
+
+        // 页面加载时显示浏览器信息
+        window.onload = function() {
+            showBrowserInfo();
+        };
+    </script>
+</body>
+</html>
